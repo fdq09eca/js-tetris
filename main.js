@@ -20,7 +20,7 @@ class Utils {
     static sum(arr) {
         return arr.reduce((acc, val) => acc + val, 0)
     }
-    
+
     static randomInt(min, max) {
         return Utils.asInt(Math.random() * (max - min + 1) + min);
     }
@@ -107,7 +107,7 @@ class Game {
         const sy = -this.stepSize * yOffset;
         return new Point(sx, sy);
     }
-    
+
     isCollided(piece) {
         if (piece == null) return false
 
@@ -120,9 +120,9 @@ class Game {
                     const y = piece.y + i * this.stepSize;
 
                     if (y >= this.grid.h) {
-                        if (this.currentPiece === piece) {
-                            this.isGameOver = true;
-                        }
+                        // if (this.currentPiece === piece) {
+                        //     this.isGameOver = true;
+                        // }
                         return true;
                     }
 
@@ -146,6 +146,13 @@ class Game {
 
         this.currentPiece.move(0, -this.stepSize);
 
+        if (this.currentPiece.y < 0) {
+            console.log("GAME OVER!!")
+            this.isGameOver = true;
+            this.onGameOver();
+            return
+        }
+
         for (let r = 0; r < this.currentPiece.shape.length; r++) {
             for (let c = 0; c < this.currentPiece.shape[r].length; c++) {
                 const v = this.currentPiece.shape[r][c]
@@ -157,8 +164,10 @@ class Game {
                     cell.value = this.currentPiece.shape[r][c];
                 }
             }
-        
         }
+
+
+        this.currentPiece = null;
     }
 
     update() {
@@ -177,8 +186,15 @@ class Game {
     }
 
     onGameOver() {
-        this.currentPiece.move(0, -this.stepSize);
-        this.currentPiece.boarderColor = 'white';
+        this.grid.cells.forEach(cell => {
+            if (cell.value > 0) {
+                cell.color = 'black';
+                cell.boarderColor = 'white';
+            }
+        })
+
+        this.currentPiece.color = 'black';
+        this.currentPiece.boarderColor = 'red';
     }
 
     onKeyDown(ev) {
@@ -215,12 +231,14 @@ class Game {
     }
 
     onSpawnPiece() {
+
+        if (this.currentPiece == null) return
+
         //adjust current piece spawn position
         const sPos = this.spawnPosition(this.currentPiece);
         this.currentPiece.setPos(sPos.x, sPos.y);
 
         // spawn a shadow piece
-        if (this.currentPiece == null) return
         const p = this.currentPiece.clone();
         p.color.a = 0.3;
         p.boarderColor.a = 0.3;
@@ -234,13 +252,10 @@ class Game {
         const type = Piece.pieceTypes[i];
         this.currentPiece = Piece.create(0, 0, type);
         this.onSpawnPiece();
-
-
-
-        // this.currentPiece.y = -this.step * this.currentPiece.nRow();
     }
 
     dropCurrentPiece() {
+        if (this.currentPiece == null) return
         this.currentPiece.setPos(this.shadowPiece.x, this.shadowPiece.y);
     }
 
@@ -255,8 +270,9 @@ class Game {
 
     updateShadowPiece(piece = null) {
         const p = this.shadowPiece
-        
-        if (piece == null)  {
+
+        if (piece == null) {
+            if (this.currentPiece == null) return
             piece = this.currentPiece;
         }
         p.shape = piece.shape;
@@ -271,7 +287,8 @@ class Game {
     draw() {
         this.grid.draw(this.ctx);
         this.drawShadowPiece(this.ctx, this.currentPiece);
-        this.currentPiece.draw(this.ctx, this.grid.cellSize);
+        if (this.currentPiece != null)
+            this.currentPiece.draw(this.ctx, this.grid.cellSize);
     }
 
     run() {
@@ -286,7 +303,7 @@ class Game {
                 if (this.isGameOver) {
                     clearInterval(this.intervalId);
                 }
-            }, 500
+            }, 100
         );
     }
 }
