@@ -1,6 +1,6 @@
 # TetrisJS
 
-a simple implementation of tetris in JS
+a simple implementation of Tetris in JS
 
 ## How to play
 
