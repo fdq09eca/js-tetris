@@ -161,7 +161,7 @@ class Game {
                     const y = this.currentPiece.y + r * this.stepSize;
                     const cell = this.grid.getCelllAt(x, y);
                     cell.color = this.currentPiece.color;
-                    cell.value = 1;
+                    cell.value = v;
                 }
             }
         }
