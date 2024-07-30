@@ -161,13 +161,14 @@ class Game {
                     const y = this.currentPiece.y + r * this.stepSize;
                     const cell = this.grid.getCelllAt(x, y);
                     cell.color = this.currentPiece.color;
-                    cell.value = this.currentPiece.shape[r][c];
+                    cell.value = 1;
                 }
             }
         }
 
 
         this.currentPiece = null;
+        this.shadowPiece = null;
     }
 
     update() {
@@ -177,10 +178,6 @@ class Game {
         if (this.isCollided(this.currentPiece)) {
 
             this.onCollided();
-
-            // if (this.isGameOver) {
-            //     this.onGameOver();
-            // }
 
         }
     }
@@ -277,7 +274,7 @@ class Game {
         }
         p.shape = piece.shape;
         p.x = piece.x;
-        p.y = this.grid.h;
+        p.y = this.grid.h; // TODO fix this, update the max Y, max Y not always the grid height
 
         while (this.isCollided(p)) {
             p.move(0, -this.stepSize);
