@@ -16,12 +16,17 @@ class MyColor {
 }
 
 class Utils {
+
+    static sum(arr) {
+        return arr.reduce((acc, val) => acc + val, 0)
+    }
+    
     static randomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1) + min);
+        return Utils.asInt(Math.random() * (max - min + 1) + min);
     }
 
     static asInt(float) {
-        return Math.floor(float);
+        return Math.trunc(float);
     }
 }
 
@@ -40,6 +45,14 @@ class Game {
 
     static get HEIGHT() {
         return 600;
+    }
+
+    static get FPS() {
+        return 60;
+    }
+
+    static get DROP_SPEED() {
+        return 1;
     }
 
     constructor() {
@@ -62,12 +75,8 @@ class Game {
     }
 
     reset() {
-        console.log('reset');
         const w = Game.WIDTH;
         const h = Game.HEIGHT;
-
-        // this.ctx.fillStyle = 'cyan';
-        // this.ctx.fillRect(0, 0, w, h);
 
         this.isGameOver = false;
         this.grid = new Grid(0, 0, w, h, 30);
@@ -89,23 +98,16 @@ class Game {
         let yOffset = 0
         for (let i = 0; i < piece.shape.length; i++) {
             const r = piece.shape[i]
-            const rSum = r.reduce((acc, val) => acc + val, 0)
+            const rSum = Utils.sum(r)
             if (rSum > 0) {
                 yOffset = i + 1
-                
             }
         }
 
         const sy = -this.stepSize * yOffset;
         return new Point(sx, sy);
     }
-
-
-
-
-
-
-
+    
     isCollided(piece) {
         if (piece == null) return false
 
@@ -142,20 +144,20 @@ class Game {
     onCollided() {
         if (this.currentPiece == null) return
 
-        this.currentPiece.move(0, this.stepSize);
-        for (let i in this.currentPiece.shape) {
-            const c = this.currentPiece.shape[i];
-            for (let j in c) {
-                if (c[j] > 0) {
-                    const x = this.currentPiece.x + j * this.stepSize;
-                    const y = this.currentPiece.y + i * this.stepSize;
+        this.currentPiece.move(0, -this.stepSize);
+
+        for (let r = 0; r < this.currentPiece.shape.length; r++) {
+            for (let c = 0; c < this.currentPiece.shape[r].length; c++) {
+                const v = this.currentPiece.shape[r][c]
+                if (v > 0) {
+                    const x = this.currentPiece.x + c * this.stepSize;
+                    const y = this.currentPiece.y + r * this.stepSize;
                     const cell = this.grid.getCelllAt(x, y);
                     cell.color = this.currentPiece.color;
-                    cell.value = c[j];
-
+                    cell.value = this.currentPiece.shape[r][c];
                 }
             }
-            this.currentPiece = null;
+        
         }
     }
 
@@ -165,9 +167,11 @@ class Game {
         this.currentPiece.move(0, this.stepSize);
         if (this.isCollided(this.currentPiece)) {
 
-            if (this.isGameOver) {
-                this.onGameOver();
-            }
+            this.onCollided();
+
+            // if (this.isGameOver) {
+            //     this.onGameOver();
+            // }
 
         }
     }
@@ -175,27 +179,26 @@ class Game {
     onGameOver() {
         this.currentPiece.move(0, -this.stepSize);
         this.currentPiece.boarderColor = 'white';
-        // clearInterval(this.intervalId);
     }
 
     onKeyDown(ev) {
 
         switch (ev.code) {
             case 'ArrowLeft':
-                this.currentPiece.move(-this.grid.cellSize, 0);
+                this.currentPiece.move(-this.stepSize, 0);
+                this.updateShadowPiece();
                 break;
             case 'ArrowRight':
-                this.currentPiece.move(this.grid.cellSize, 0);
-                console.log('right');
+                this.currentPiece.move(this.stepSize, 0);
+                this.updateShadowPiece();
                 break;
             case 'ArrowDown':
-                this.currentPiece.move(0, this.grid.cellSize);
-                console.log('down');
+                this.currentPiece.move(0, this.stepSize);
+                this.updateShadowPiece();
                 break;
             case 'ArrowUp':
-            case 'ControlLeft':
-            case 'ControlRight':
                 this.currentPiece.rotate();
+                this.updateShadowPiece();
                 break;
             case 'Space':
                 this.dropCurrentPiece();
@@ -230,7 +233,6 @@ class Game {
         const i = Utils.randomInt(0, Piece.pieceTypes.length - 1);
         const type = Piece.pieceTypes[i];
         this.currentPiece = Piece.create(0, 0, type);
-
         this.onSpawnPiece();
 
 
@@ -239,21 +241,31 @@ class Game {
     }
 
     dropCurrentPiece() {
-        throw new Error('Not implemented');
+        this.currentPiece.setPos(this.shadowPiece.x, this.shadowPiece.y);
     }
 
     drawShadowPiece(ctx, piece) {
         const p = this.shadowPiece;
-        p.x = piece.x;
-        p.y = this.grid.h
-
-        while (this.isCollided(p)) {
-            p.move(0, -this.stepSize);
-        }
+        this.updateShadowPiece();
 
 
 
         p.draw(ctx, this.grid.cellSize);
+    }
+
+    updateShadowPiece(piece = null) {
+        const p = this.shadowPiece
+        
+        if (piece == null)  {
+            piece = this.currentPiece;
+        }
+        p.shape = piece.shape;
+        p.x = piece.x;
+        p.y = this.grid.h;
+
+        while (this.isCollided(p)) {
+            p.move(0, -this.stepSize);
+        }
     }
 
     draw() {
@@ -443,7 +455,7 @@ class Piece {
         this.shape = rotated;
     }
 
-    static create(x, y, pieceType = 'I') {
+    static create(x = 0, y = 0, pieceType = 'I') {
         const p = new Piece(x, y, 'cyan');
 
         switch (pieceType) {
