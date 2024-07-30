@@ -60,6 +60,8 @@ class Game {
         this.init()
     }
 
+
+
     init() {
         const w = Game.WIDTH;
         const h = Game.HEIGHT;
@@ -82,6 +84,7 @@ class Game {
         this.grid = new Grid(0, 0, w, h, 30);
         this.currentPiece = null;
         this.shadowPiece = null;
+        this.isFullRows_Y = [];
 
     }
 
@@ -120,9 +123,6 @@ class Game {
                     const y = piece.y + i * this.stepSize;
 
                     if (y >= this.grid.h) {
-                        // if (this.currentPiece === piece) {
-                        //     this.isGameOver = true;
-                        // }
                         return true;
                     }
 
@@ -160,26 +160,79 @@ class Game {
                     const x = this.currentPiece.x + c * this.stepSize;
                     const y = this.currentPiece.y + r * this.stepSize;
                     const cell = this.grid.getCelllAt(x, y);
+
+                    if (cell == null) {
+                        return
+                    }
+
                     cell.color = this.currentPiece.color;
                     cell.value = v;
+
+                    if (this.isFullRow(cell.y)) {
+                        this.isFullRows_Y.push(cell.y);
+                    }
                 }
             }
         }
-
-
+        
+        
+        
         this.currentPiece = null;
         this.shadowPiece = null;
     }
+    
+    isFullRow(y) {
+        this.grid.getRow(y).every(cell => cell.value > 0);
+    }
 
     update() {
+        
+
+
         this.spawnPiece();
 
         this.currentPiece.move(0, this.stepSize);
         if (this.isCollided(this.currentPiece)) {
-
             this.onCollided();
 
+            // remove full rows
+            while (this.isFullRows_Y.length > 0) {
+                this.removeRow(this.isFullRows_Y.pop());
+            }
         }
+    }
+
+    removeRow(y) {
+        // TODO: test this, no sure..
+        if (y == null || y < 0) return 
+        
+        const prevY = y - this.stepSize;
+        const fullRow = this.grid.getRow(y);
+        if (prevY < 0) {
+            fullRow.forEach(cell => {
+                cell.value = 0;
+                cell.color = 'gray';
+            });
+            return
+        }
+        
+        const prevRow = this.grid.getRow(prevY);
+        if (this.isFullRow(prevRow)) {
+            return this.removeRow(prevY);
+        }
+        
+        console.assert(fullRow.length == prevRow.length, "Row length mismatch");
+
+
+        fullRow.forEach(dstCell => {
+            const srcCell = this.grid.getCelllAt(dstCell.x, prevY)
+
+            if (srcCell != null) {
+                dstCell.takeContent(srcCell);
+            }
+            
+        });
+
     }
 
     onGameOver() {
@@ -215,7 +268,6 @@ class Game {
                 break;
             case 'Space':
                 this.dropCurrentPiece();
-                console.log('space');
                 break;
             case 'Escape':
                 this.reset()
@@ -242,6 +294,8 @@ class Game {
         this.shadowPiece = p;
     }
 
+
+
     spawnPiece() {
         if (this.currentPiece != null) return
 
@@ -253,15 +307,25 @@ class Game {
 
     dropCurrentPiece() {
         if (this.currentPiece == null) return
-        this.currentPiece.setPos(this.shadowPiece.x, this.shadowPiece.y);
+        if (this.shadowPiece != null) {
+            this.currentPiece.setPos(this.shadowPiece.x, this.shadowPiece.y);
+        } else {
+            drop(this.currentPiece);
+        }
     }
 
-    drawShadowPiece(ctx, piece) {
+    drop(piece) {
+        while (!this.isCollided(piece)) {
+            piece.move(0, this.stepSize);
+        }
+        piece.move(0, -this.stepSize);
+    }
+
+    drawShadowPiece(ctx, piece = null) {
         const p = this.shadowPiece;
-        this.updateShadowPiece();
+        if (p == null) return
 
-
-
+        this.updateShadowPiece(piece);
         p.draw(ctx, this.grid.cellSize);
     }
 
@@ -274,11 +338,8 @@ class Game {
         }
         p.shape = piece.shape;
         p.x = piece.x;
-        p.y = this.grid.h; // TODO fix this, update the max Y, max Y not always the grid height
-
-        while (this.isCollided(p)) {
-            p.move(0, -this.stepSize);
-        }
+        p.y = piece.y;
+        this.drop(p);
     }
 
     draw() {
@@ -316,6 +377,16 @@ class Cell {
         this.value = val;
     }
 
+    takeContent(srcCell) {
+        if (srcCell == null) return
+
+        this.value = srcCell.value;
+        this.color = srcCell.color;
+
+        srcCell.value = 0;
+        srcCell.color = 'gray';
+    }
+
     draw(ctx) {
         Cell.s_draw(ctx, this.x, this.y, this.size, this.color, this.borderWidth, this.boarderColor);
     }
@@ -348,6 +419,11 @@ class Grid {
         this.cells = [];
         this.init();
     }
+
+    getRow(y) {
+        return this.cells.filter(cell => cell.y == y);
+    }
+
 
     get nRow() {
         return Math.floor(this.h / this.cellSize);
