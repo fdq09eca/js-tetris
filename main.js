@@ -72,6 +72,7 @@ class Game {
         this.isGameOver = false;
         this.grid = new Grid(0, 0, w, h, 30);
         this.currentPiece = null;
+        this.shadowPiece = null;
 
     }
 
@@ -81,16 +82,29 @@ class Game {
         this.canvas.height = h;
     }
 
-    get spawnPosition() {
+    spawnPosition(piece) {
+        if (piece == null)
+            return null
         const sx = this.grid.x + Utils.asInt(this.canvas.width / 2) - this.grid.cellSize
-        const sy = -this.stepSize
-        // const sy = this.step * 12
+        let yOffset = 0
+        for (let i = 0; i < piece.shape.length; i++) {
+            const r = piece.shape[i]
+            const rSum = r.reduce((acc, val) => acc + val, 0)
+            if (rSum > 0) {
+                yOffset = i + 1
+                
+            }
+        }
+
+        const sy = -this.stepSize * yOffset;
         return new Point(sx, sy);
     }
 
-    
 
-    
+
+
+
+
 
     isCollided(piece) {
         if (piece == null) return false
@@ -197,13 +211,29 @@ class Game {
         }
     }
 
+    onSpawnPiece() {
+        //adjust current piece spawn position
+        const sPos = this.spawnPosition(this.currentPiece);
+        this.currentPiece.setPos(sPos.x, sPos.y);
+
+        // spawn a shadow piece
+        if (this.currentPiece == null) return
+        const p = this.currentPiece.clone();
+        p.color.a = 0.3;
+        p.boarderColor.a = 0.3;
+        this.shadowPiece = p;
+    }
+
     spawnPiece() {
         if (this.currentPiece != null) return
 
-
         const i = Utils.randomInt(0, Piece.pieceTypes.length - 1);
         const type = Piece.pieceTypes[i];
-        this.currentPiece = Piece.create(this.spawnPosition.x, this.spawnPosition.y, type);
+        this.currentPiece = Piece.create(0, 0, type);
+
+        this.onSpawnPiece();
+
+
 
         // this.currentPiece.y = -this.step * this.currentPiece.nRow();
     }
@@ -212,13 +242,9 @@ class Game {
         throw new Error('Not implemented');
     }
 
-    drawGhostPiece() {
-        const p = this.currentPiece.clone();
-        
-
-        p.color.a = 0.3;
-        p.boarderColor.a = 0.3;
-        p.x = this.currentPiece.x
+    drawShadowPiece(ctx, piece) {
+        const p = this.shadowPiece;
+        p.x = piece.x;
         p.y = this.grid.h
 
         while (this.isCollided(p)) {
@@ -227,12 +253,12 @@ class Game {
 
 
 
-        p.draw(this.ctx, this.grid.cellSize);
+        p.draw(ctx, this.grid.cellSize);
     }
 
     draw() {
         this.grid.draw(this.ctx);
-        this.drawGhostPiece(this.currentPiece);
+        this.drawShadowPiece(this.ctx, this.currentPiece);
         this.currentPiece.draw(this.ctx, this.grid.cellSize);
     }
 
@@ -240,7 +266,7 @@ class Game {
         if (this.intervalId != null) {
             clearInterval(this.intervalId);
         }
-        
+
         this.intervalId = setInterval(
             () => {
                 this.update();
@@ -344,6 +370,11 @@ class Piece {
 
     static get pieceTypes() {
         return ['I', 'J', 'L', 'O', 'T', 'S', 'Z'];
+    }
+
+    setPos(x, y) {
+        this.x = x;
+        this.y = y;
     }
 
     constructor(x, y, color = 'cyan') {
