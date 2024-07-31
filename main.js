@@ -328,7 +328,15 @@ class Game {
             case 'ArrowDown': {
                 if (this.currentPiece == null) return
                 this.currentPiece.move(0, this.stepSize);
-                this.updateShadowPiece();
+
+                if (this.isInBounds(this.currentPiece)) {
+                    this.updateShadowPiece();
+                } else {
+                    // undo
+                    this.currentPiece.setPos(this.shadowPiece.x, this.shadowPiece.y);
+                    break;
+                }
+                // this.updateShadowPiece();
             } break;
 
             case 'ArrowUp': {
