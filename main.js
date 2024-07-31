@@ -28,6 +28,10 @@ class Utils {
     static asInt(float) {
         return Math.trunc(float);
     }
+
+    static sort(arr, desc = false) {
+        return arr.sort((a, b) => desc ? b - a : a - b);
+    }
 }
 
 class Point {
@@ -85,6 +89,23 @@ class Game {
         this.currentPiece = null;
         this.shadowPiece = null;
         this.isFullRows_Y = [];
+
+        // { // test
+        //     let x = 0;
+
+        //     while (x < this.grid.w) {
+        //         x += this.grid.cellSize;
+
+        //         for (let i = 0; i < 4; i++) {
+        //             const y = this.grid.h - this.grid.cellSize * (i + 1); // last row
+        //             const c = this.grid.getCelllAt(x, y)
+        //             if (c) {
+        //                 c.value = 1
+        //                 c.color = 'red'
+        //             }
+        //         }
+        //     }
+        // }
 
     }
 
@@ -174,65 +195,62 @@ class Game {
                 }
             }
         }
-        
-        
-        
+
+
+
         this.currentPiece = null;
         this.shadowPiece = null;
     }
-    
+
     isFullRow(y) {
-        this.grid.getRow(y).every(cell => cell.value > 0);
+        const row = this.grid.getRow(y)
+        return row.every(cell => cell.value > 0);
+    }
+
+    isEmptyRow(y) {
+        return !this.isFullRow(y)
     }
 
     update() {
-        
-
-
         this.spawnPiece();
 
         this.currentPiece.move(0, this.stepSize);
         if (this.isCollided(this.currentPiece)) {
             this.onCollided();
 
+            Utils.sort(this.isFullRows_Y, true);  // sort in descending order
             // remove full rows
             while (this.isFullRows_Y.length > 0) {
-                this.removeRow(this.isFullRows_Y.pop());
+                const y = this.isFullRows_Y.pop()
+                if (y != null) {
+                    this.removeRow(y);
+                }
             }
         }
     }
 
+
+
     removeRow(y) {
-        // TODO: test this, no sure..
-        if (y == null || y < 0) return 
-        
-        const prevY = y - this.stepSize;
-        const fullRow = this.grid.getRow(y);
-        if (prevY < 0) {
-            fullRow.forEach(cell => {
-                cell.value = 0;
-                cell.color = 'gray';
-            });
-            return
-        }
-        
-        const prevRow = this.grid.getRow(prevY);
-        if (this.isFullRow(prevRow)) {
-            return this.removeRow(prevY);
-        }
-        
-        console.assert(fullRow.length == prevRow.length, "Row length mismatch");
-
-
-        fullRow.forEach(dstCell => {
-            const srcCell = this.grid.getCelllAt(dstCell.x, prevY)
-
-            if (srcCell != null) {
-                dstCell.takeContent(srcCell);
-            }
+        while (true) {
+            if (y < 0) return
+            const row = this.grid.getRow(y);
             
-        });
-
+            if (row.some(cell => cell.value > 0)) {
+                const prevRow = this.grid.getRow(y - this.stepSize);
+                
+                for (let i = 0; i < row.length; i++) {
+                    const dstCell = row[i]
+                    const srcCell = prevRow[i];
+                    dstCell.value = srcCell.value;
+                    dstCell.color = srcCell.color;
+                }
+                
+                y -= this.stepSize;
+            } else {
+                break;
+            }
+        }
     }
 
     onGameOver() {
@@ -250,22 +268,30 @@ class Game {
     onKeyDown(ev) {
 
         switch (ev.code) {
-            case 'ArrowLeft':
+            case 'ArrowLeft': {
+                if (this.currentPiece == null) return
                 this.currentPiece.move(-this.stepSize, 0);
                 this.updateShadowPiece();
-                break;
-            case 'ArrowRight':
+            } break;
+
+            case 'ArrowRight': {
+                if (this.currentPiece == null) return
                 this.currentPiece.move(this.stepSize, 0);
                 this.updateShadowPiece();
-                break;
-            case 'ArrowDown':
+            } break;
+
+            case 'ArrowDown': {
+                if (this.currentPiece == null) return
                 this.currentPiece.move(0, this.stepSize);
                 this.updateShadowPiece();
-                break;
-            case 'ArrowUp':
+            } break;
+
+            case 'ArrowUp': {
+                if (this.currentPiece == null) return
                 this.currentPiece.rotate();
                 this.updateShadowPiece();
-                break;
+            } break;
+
             case 'Space':
                 this.dropCurrentPiece();
                 break;
@@ -296,11 +322,14 @@ class Game {
 
 
 
-    spawnPiece() {
+    spawnPiece(type = null) {
         if (this.currentPiece != null) return
 
-        const i = Utils.randomInt(0, Piece.pieceTypes.length - 1);
-        const type = Piece.pieceTypes[i];
+        if (type == null) {
+            const i = Utils.randomInt(0, Piece.pieceTypes.length - 1);
+            type = Piece.pieceTypes[i];
+        }
+
         this.currentPiece = Piece.create(0, 0, type);
         this.onSpawnPiece();
     }
@@ -350,6 +379,7 @@ class Game {
     }
 
     run() {
+
         if (this.intervalId != null) {
             clearInterval(this.intervalId);
         }
@@ -361,7 +391,7 @@ class Game {
                 if (this.isGameOver) {
                     clearInterval(this.intervalId);
                 }
-            }, 100
+            }, 300
         );
     }
 }
@@ -377,15 +407,6 @@ class Cell {
         this.value = val;
     }
 
-    takeContent(srcCell) {
-        if (srcCell == null) return
-
-        this.value = srcCell.value;
-        this.color = srcCell.color;
-
-        srcCell.value = 0;
-        srcCell.color = 'gray';
-    }
 
     draw(ctx) {
         Cell.s_draw(ctx, this.x, this.y, this.size, this.color, this.borderWidth, this.boarderColor);
