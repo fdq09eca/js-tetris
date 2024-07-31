@@ -66,6 +66,8 @@ class Game {
 
 
 
+
+
     init() {
         const w = Game.WIDTH;
         const h = Game.HEIGHT;
@@ -196,8 +198,6 @@ class Game {
             }
         }
 
-
-
         this.currentPiece = null;
         this.shadowPiece = null;
     }
@@ -229,23 +229,21 @@ class Game {
         }
     }
 
-
-
     removeRow(y) {
         while (true) {
             if (y < 0) return
             const row = this.grid.getRow(y);
-            
+
             if (row.some(cell => cell.value > 0)) {
                 const prevRow = this.grid.getRow(y - this.stepSize);
-                
+
                 for (let i = 0; i < row.length; i++) {
                     const dstCell = row[i]
                     const srcCell = prevRow[i];
                     dstCell.value = srcCell.value;
                     dstCell.color = srcCell.color;
                 }
-                
+
                 y -= this.stepSize;
             } else {
                 break;
@@ -265,19 +263,61 @@ class Game {
         this.currentPiece.boarderColor = 'red';
     }
 
+    isInBounds(piece) {
+        if (piece == null) return false
+        
+        for (let r = 0; r < piece.shape.length; r++) {
+            for (let c = 0; c < piece.shape[r].length; c++) {
+                const v = piece.shape[r][c]
+                if (v > 0) {
+                    const x = piece.x + c * this.stepSize;
+                    const y = piece.y + r * this.stepSize;
+                    const b = this.isInBounds_Pos(x, y);
+                    if (!b) {
+                        return b
+                    }
+                }
+            }
+        }
+        return true
+    }
+
+
+    isInBounds_Pos(x, y) {
+        const b = x >= 0 && x < this.grid.w && y >= 0 && y < this.grid.h
+        if (!b) {
+            console.log('Out of bounds')
+        }
+        return b;
+    }
+
     onKeyDown(ev) {
+
+
 
         switch (ev.code) {
             case 'ArrowLeft': {
                 if (this.currentPiece == null) return
+                
                 this.currentPiece.move(-this.stepSize, 0);
-                this.updateShadowPiece();
+                
+                if (this.isInBounds(this.currentPiece)) {
+                    this.updateShadowPiece();
+                } else {
+                    this.currentPiece.move(this.stepSize, 0);
+                }
             } break;
 
             case 'ArrowRight': {
                 if (this.currentPiece == null) return
+                
                 this.currentPiece.move(this.stepSize, 0);
-                this.updateShadowPiece();
+                
+                if (this.isInBounds(this.currentPiece)) {
+                    this.updateShadowPiece();
+                } else {
+                    this.currentPiece.move(-this.stepSize, 0);
+                }
             } break;
 
             case 'ArrowDown': {
