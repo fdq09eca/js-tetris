@@ -87,6 +87,8 @@ class Game {
         const h = Game.HEIGHT;
 
         this.isGameOver = false;
+        this.isPaused = false;
+        
         this.grid = new Grid(0, 0, w, h, 30);
         this.currentPiece = null;
         this.shadowPiece = null;
@@ -265,7 +267,7 @@ class Game {
 
     isInBounds(piece) {
         if (piece == null) return false
-        
+
         for (let r = 0; r < piece.shape.length; r++) {
             for (let c = 0; c < piece.shape[r].length; c++) {
                 const v = piece.shape[r][c]
@@ -292,31 +294,34 @@ class Game {
     }
 
     onKeyDown(ev) {
-
-
-
         switch (ev.code) {
+            
             case 'ArrowLeft': {
                 if (this.currentPiece == null) return
-                
+
                 this.currentPiece.move(-this.stepSize, 0);
-                
+
                 if (this.isInBounds(this.currentPiece)) {
                     this.updateShadowPiece();
                 } else {
+                    // undo
                     this.currentPiece.move(this.stepSize, 0);
+                    break;
                 }
             } break;
 
+
             case 'ArrowRight': {
                 if (this.currentPiece == null) return
-                
+
                 this.currentPiece.move(this.stepSize, 0);
-                
+
                 if (this.isInBounds(this.currentPiece)) {
                     this.updateShadowPiece();
                 } else {
+                    // undo
                     this.currentPiece.move(-this.stepSize, 0);
+                    break;
                 }
             } break;
 
@@ -328,21 +333,46 @@ class Game {
 
             case 'ArrowUp': {
                 if (this.currentPiece == null) return
+
+                const oldShape = this.currentPiece.shape; // rotate return a newly allocated mem, so shallow copy is enough? a bit unsafe.
+
                 this.currentPiece.rotate();
-                this.updateShadowPiece();
+                
+                if (this.isInBounds(this.currentPiece) || !this.isCollided(this.currentPiece)) {
+                    this.updateShadowPiece();
+                } else {
+                    // undo
+                    this.currentPiece.shape = oldShape;
+                    break;                
+                }
+        
             } break;
 
             case 'Space':
                 this.dropCurrentPiece();
                 break;
-            case 'Escape':
-                this.reset()
-                this.run()
-                break;
+            
+            case 'Escape': {
+                if (this.isGameOver) {
+                    this.restart();
+                } else {
+                    this.pause()
+                }
+            }   break;
+            
+            case 'KeyR': {
+                this.restart();
+            }   break;
+            
             default:
                 console.log(ev)
                 break;
         }
+    }
+
+    restart() {
+        this.reset();
+        this.run();
     }
 
     onSpawnPiece() {
@@ -416,6 +446,19 @@ class Game {
         this.drawShadowPiece(this.ctx, this.currentPiece);
         if (this.currentPiece != null)
             this.currentPiece.draw(this.ctx, this.grid.cellSize);
+    }
+
+    pause(){
+        if (this.isPaused) {
+            this.isPaused = false;
+            this.run();
+        } 
+        else 
+        {
+            this.isPaused = true;
+            console.assert(this.intervalId != null);
+            clearInterval(this.intervalId);
+        }
     }
 
     run() {
