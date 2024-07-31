@@ -165,7 +165,9 @@ class Game {
     onCollided() {
         if (this.currentPiece == null) return
 
-        this.currentPiece.move(0, -this.stepSize);
+        while (this.isCollided(this.currentPiece)) {
+            this.currentPiece.move(0, -this.stepSize);
+        }
 
         if (this.currentPiece.y < 0) {
             console.log("GAME OVER!!")
@@ -324,12 +326,13 @@ class Game {
             case 'ArrowDown': {
                 if (this.currentPiece == null) return
                 this.currentPiece.move(0, this.stepSize);
-
+                
                 if (this.isInBounds(this.currentPiece)) {
                     this.updateShadowPiece();
                 } else {
                     // undo
-                    this.currentPiece.setPos(this.shadowPiece.x, this.shadowPiece.y);
+                    this.currentPiece.move(0, -this.stepSize);
+                    
                     break;
                 }
                 // this.updateShadowPiece();
