@@ -64,10 +64,6 @@ class Game {
         this.init()
     }
 
-
-
-
-
     init() {
         const w = Game.WIDTH;
         const h = Game.HEIGHT;
