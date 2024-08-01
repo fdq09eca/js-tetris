@@ -115,7 +115,7 @@ class Game {
 
     setDropSpeed(speed) {
         if (speed < 0 || speed > Game.DROP_CYCLE) return
-        this.drop_speed = speed;
+        this.dropSpeed = speed;
     }
 
     reset() {
@@ -128,10 +128,11 @@ class Game {
         this.grid = new Grid(0, 0, w, h, 30);
         this.currentPiece = null;
         this.shadowPiece = null;
-        this.isFullRows_Y = [];
 
         this.dropCycleCounter = 0;
-        this.drop_speed = 50
+        this.dropSpeed = 50
+
+        
 
         // { // test
         //     let x = 0;
@@ -213,7 +214,6 @@ class Game {
         }
 
         if (this.currentPiece.y < 0) {
-            console.log("GAME OVER!!")
             this.isGameOver = true;
             this.onGameOver();
             return
@@ -249,15 +249,13 @@ class Game {
         const row = this.grid.getRow(y)
         return row.every(cell => cell.value > 0);
     }
-
-    isEmptyRow(y) {
-        return !this.isFullRow(y)
-    }
+    
 
     update() {
         this.spawnPiece();
+        
 
-        this.dropCycleCounter += this.drop_speed;
+        this.dropCycleCounter += this.dropSpeed;
         if (this.dropCycleCounter >= Game.DROP_CYCLE) {
             this.currentPiece.move(0, this.stepSize);
             this.dropCycleCounter = 0;
@@ -349,12 +347,14 @@ class Game {
     }
 
     onKeyDown(ev) {
+
         switch (ev.code) {
 
             case 'ArrowLeft': {
                 if (this.currentPiece == null) return
                 if (this.tryMove(this.currentPiece, -this.stepSize, 0)) {
                     this.updateShadowPiece();
+                    
                 }
             } break;
 
@@ -363,6 +363,7 @@ class Game {
                 if (this.currentPiece == null) return
                 if (this.tryMove(this.currentPiece, this.stepSize, 0)) {
                     this.updateShadowPiece();
+                    
                 }
             } break;
 
@@ -370,6 +371,7 @@ class Game {
                 if (this.currentPiece == null) return
                 if (this.tryMove(this.currentPiece, 0, this.stepSize)) {
                     this.updateShadowPiece();
+                    
                 }
             } break;
 
@@ -416,6 +418,7 @@ class Game {
 
             case 'Space':
                 this.dropCurrentPiece();
+                
                 break;
 
             case 'Escape': {
@@ -484,13 +487,15 @@ class Game {
         } else {
             this.drop(this.currentPiece);
         }
+        this.onCollided();
     }
-
+    
     drop(piece) {
         while (!this.isCollided(piece)) {
             piece.move(0, this.stepSize);
         }
         piece.move(0, -this.stepSize);
+        
     }
 
     drawShadowPiece(ctx, piece = null) {
@@ -522,15 +527,15 @@ class Game {
     draw() {
         this.grid.draw(this.ctx);
 
-        
+
         this.drawShadowPiece(this.ctx, this.currentPiece);
         if (this.currentPiece != null)
             this.currentPiece.draw(this.ctx, this.grid.cellSize);
 
-        
+
 
         if (this.isGameOver) {
-            Utils.drawTextBG(this.ctx, `Game Over`, "50px Arial", "black", "white", this.grid.w/12, this.grid.h/2);
+            Utils.drawTextBG(this.ctx, `Game Over`, "50px Arial", "black", "white", this.grid.w / 12, this.grid.h / 2);
         }
 
     }
@@ -605,6 +610,7 @@ class Cell {
 }
 
 class Grid {
+    
     constructor(x, y, w, h, cellSize = 30) {
         this.x = x;
         this.y = y;
@@ -725,9 +731,11 @@ class Piece {
 
     rotate() {
         const nRow = this.shape.length;
-        console.assert(nRow > 0);
-
         const nCol = this.shape[0].length;
+        
+        console.assert(nRow > 0);
+        console.assert(nRow == nCol);
+
         const rotated = new Array(nRow).fill(0).map(() => {
             return new Array(nCol).fill(0)
         });

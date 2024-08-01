@@ -26,4 +26,3 @@ Simple Tetris in JS
 - [ ] next piece display
 - [ ] score
 - [ ] combo
-- [ ] 
