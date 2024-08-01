@@ -18,27 +18,13 @@ class MyColor {
 class Utils {
 
     static drawTextBG(ctx, txt, font = "50px Arial", textColor = "red, ", bgColor = "white", x = 0, y = 0) {
-        /// set font
         ctx.font = font;
-
-        /// draw text from top - makes life easier at the moment
         ctx.textBaseline = 'top';
-
-        /// color for background
         ctx.fillStyle = bgColor;
-
-        /// get width of text
         var width = ctx.measureText(txt).width;
-
-        /// draw background rect assuming height of font
         ctx.fillRect(x, y, width, parseInt(font, 10));
-
-        /// text color
         ctx.fillStyle = textColor;
-
-        /// draw text on top
         ctx.fillText(txt, x, y);
-
     }
 
     static sum(arr) {
@@ -132,7 +118,7 @@ class Game {
         this.dropCycleCounter = 0;
         this.dropSpeed = 50
 
-        
+
 
         // { // test
         //     let x = 0;
@@ -249,11 +235,11 @@ class Game {
         const row = this.grid.getRow(y)
         return row.every(cell => cell.value > 0);
     }
-    
+
 
     update() {
         this.spawnPiece();
-        
+
 
         this.dropCycleCounter += this.dropSpeed;
         if (this.dropCycleCounter >= Game.DROP_CYCLE) {
@@ -354,7 +340,7 @@ class Game {
                 if (this.currentPiece == null) return
                 if (this.tryMove(this.currentPiece, -this.stepSize, 0)) {
                     this.updateShadowPiece();
-                    
+
                 }
             } break;
 
@@ -363,7 +349,7 @@ class Game {
                 if (this.currentPiece == null) return
                 if (this.tryMove(this.currentPiece, this.stepSize, 0)) {
                     this.updateShadowPiece();
-                    
+
                 }
             } break;
 
@@ -371,7 +357,7 @@ class Game {
                 if (this.currentPiece == null) return
                 if (this.tryMove(this.currentPiece, 0, this.stepSize)) {
                     this.updateShadowPiece();
-                    
+
                 }
             } break;
 
@@ -418,7 +404,7 @@ class Game {
 
             case 'Space':
                 this.dropCurrentPiece();
-                
+
                 break;
 
             case 'Escape': {
@@ -489,13 +475,13 @@ class Game {
         }
         this.onCollided();
     }
-    
+
     drop(piece) {
         while (!this.isCollided(piece)) {
             piece.move(0, this.stepSize);
         }
         piece.move(0, -this.stepSize);
-        
+
     }
 
     drawShadowPiece(ctx, piece = null) {
@@ -610,7 +596,7 @@ class Cell {
 }
 
 class Grid {
-    
+
     constructor(x, y, w, h, cellSize = 30) {
         this.x = x;
         this.y = y;
@@ -732,7 +718,7 @@ class Piece {
     rotate() {
         const nRow = this.shape.length;
         const nCol = this.shape[0].length;
-        
+
         console.assert(nRow > 0);
         console.assert(nRow == nCol);
 
