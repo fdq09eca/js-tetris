@@ -17,6 +17,30 @@ class MyColor {
 
 class Utils {
 
+    static drawTextBG(ctx, txt, font = "50px Arial", textColor = "red, ", bgColor = "white", x = 0, y = 0) {
+        /// set font
+        ctx.font = font;
+
+        /// draw text from top - makes life easier at the moment
+        ctx.textBaseline = 'top';
+
+        /// color for background
+        ctx.fillStyle = bgColor;
+
+        /// get width of text
+        var width = ctx.measureText(txt).width;
+
+        /// draw background rect assuming height of font
+        ctx.fillRect(x, y, width, parseInt(font, 10));
+
+        /// text color
+        ctx.fillStyle = textColor;
+
+        /// draw text on top
+        ctx.fillText(txt, x, y);
+
+    }
+
     static sum(arr) {
         return arr.reduce((acc, val) => acc + val, 0)
     }
@@ -43,7 +67,7 @@ class Point {
 
 class Game {
 
-    static run() {
+    static s_run() {
         const g = new Game()
         g.run()
     }
@@ -60,9 +84,15 @@ class Game {
         return 60;
     }
 
-    static get DROP_SPEED() {
-        return 1;
+    static get DROP_CYCLE() {
+        return 1000;
     }
+
+    static get FPS() {
+        return 80;
+    }
+
+
 
     constructor() {
         this.initCanvas();
@@ -83,6 +113,11 @@ class Game {
         window.addEventListener('keydown', this.onKeyDown.bind(this), false);
     }
 
+    setDropSpeed(speed) {
+        if (speed < 0 || speed > Game.DROP_CYCLE) return
+        this.drop_speed = speed;
+    }
+
     reset() {
         const w = Game.WIDTH;
         const h = Game.HEIGHT;
@@ -94,6 +129,9 @@ class Game {
         this.currentPiece = null;
         this.shadowPiece = null;
         this.isFullRows_Y = [];
+
+        this.dropCycleCounter = 0;
+        this.drop_speed = 50
 
         // { // test
         //     let x = 0;
@@ -197,7 +235,7 @@ class Game {
                     cell.value = v;
 
                     if (this.isFullRow(cell.y)) {
-                        this.isFullRows_Y.push(cell.y);
+                        this.removeRow(cell.y);
                     }
                 }
             }
@@ -219,40 +257,42 @@ class Game {
     update() {
         this.spawnPiece();
 
-        this.currentPiece.move(0, this.stepSize);
+        this.dropCycleCounter += this.drop_speed;
+        if (this.dropCycleCounter >= Game.DROP_CYCLE) {
+            this.currentPiece.move(0, this.stepSize);
+            this.dropCycleCounter = 0;
+        }
+
         if (this.isCollided(this.currentPiece)) {
             this.onCollided();
-
-            Utils.sort(this.isFullRows_Y, true);  // sort in descending order
-            // remove full rows
-            while (this.isFullRows_Y.length > 0) {
-                const y = this.isFullRows_Y.pop()
-                if (y != null) {
-                    this.removeRow(y);
-                }
-            }
         }
     }
 
     removeRow(y) {
         while (true) {
+
             if (y < 0) return
+
             const row = this.grid.getRow(y);
 
-            if (row.some(cell => cell.value > 0)) {
-                const prevRow = this.grid.getRow(y - this.stepSize);
+            if (row.every(cell => cell.value <= 0))
+                return
 
-                for (let i = 0; i < row.length; i++) {
-                    const dstCell = row[i]
-                    const srcCell = prevRow[i];
-                    dstCell.value = srcCell.value;
-                    dstCell.color = srcCell.color;
-                }
+            const prevRow = this.grid.getRow(y - this.stepSize);
 
-                y -= this.stepSize;
-            } else {
-                break;
+            if (prevRow.length != row.length) {
+                console.log('Invalid row length')
             }
+
+            for (let i = 0; i < row.length; i++) {
+                const dstCell = row[i]
+                const srcCell = prevRow[i];
+                dstCell.value = srcCell.value;
+                dstCell.color = srcCell.color;
+            }
+
+            y -= this.stepSize;
+
         }
     }
 
@@ -341,35 +381,35 @@ class Game {
                 this.currentPiece.rotate();
 
                 if (this.isInBounds(this.currentPiece)) {
-                    
-                    if (this.isCollided(this.currentPiece) 
-                    && this.isFailedAllDirections(this.currentPiece)) {
+
+                    if (this.isCollided(this.currentPiece)
+                        && this.isFailedAllDirections(this.currentPiece)) {
                         // undo
-                        this.currentPiece.shape = oldShape;        
+                        this.currentPiece.shape = oldShape;
                         break;
                     }
 
                     this.updateShadowPiece();
-                    
+
                 } else {
                     // not in bounds
                     if (this.isFailedAllDirections(this.currentPiece) // try up
-                    ){
+                    ) {
                         // undo
-                        this.currentPiece.shape = oldShape;        
+                        this.currentPiece.shape = oldShape;
                         break;
                     } else {
-                        if (this.isCollided(this.currentPiece)) {
-                            if (this.isFailedAllDirections(this.currentPiece)){
-                                // undo
-                                this.currentPiece.shape = oldShape;        
-                                break;
-                            }
+                        if (this.isCollided(this.currentPiece)
+                            && this.isFailedAllDirections(this.currentPiece)) {
+                            // undo
+                            this.currentPiece.shape = oldShape;
+                            break;
                         }
-                        
+
+
                         this.updateShadowPiece();
                     }
-                    
+
                 }
 
             } break;
@@ -466,22 +506,33 @@ class Game {
             if (this.currentPiece == null) return
             piece = this.currentPiece;
         }
-        
+
         const p = this.shadowPiece
         if (p == null) return
 
-        
+
         p.shape = piece.shape;
         p.x = piece.x;
         p.y = piece.y;
         this.drop(p);
     }
 
+
+
     draw() {
         this.grid.draw(this.ctx);
+
+        
         this.drawShadowPiece(this.ctx, this.currentPiece);
         if (this.currentPiece != null)
             this.currentPiece.draw(this.ctx, this.grid.cellSize);
+
+        
+
+        if (this.isGameOver) {
+            Utils.drawTextBG(this.ctx, `Game Over`, "50px Arial", "black", "white", this.grid.w/12, this.grid.h/2);
+        }
+
     }
 
     pause() {
@@ -491,9 +542,15 @@ class Game {
         }
         else {
             this.isPaused = true;
+
+            this.drawPause();
             console.assert(this.intervalId != null);
             clearInterval(this.intervalId);
         }
+    }
+
+    drawPause() {
+        Utils.drawTextBG(this.ctx, `Pause`, "50px Arial", "black", "white", this.grid.w / 4, this.grid.h / 2);
     }
 
     run() {
@@ -509,7 +566,7 @@ class Game {
                 if (this.isGameOver) {
                     clearInterval(this.intervalId);
                 }
-            }, 300
+            }, 1000 / Game.FPS
         );
     }
 }
@@ -768,4 +825,4 @@ class Piece {
 
 // main
 
-Game.run()
+Game.s_run()
