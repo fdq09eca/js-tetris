@@ -84,17 +84,18 @@ class Game {
         this.initCanvas();
         this.init()
     }
-
+    
     init() {
         const w = Game.WIDTH;
         const h = Game.HEIGHT;
-
-
+        
+        
         this.initCanvas(w, h);
         this.ctx = this.canvas.getContext('2d');
-
+        
         this.reset();
-
+        
+        
         window.removeEventListener('keydown', this.onKeyDown.bind(this), false);
         window.addEventListener('keydown', this.onKeyDown.bind(this), false);
     }
@@ -117,6 +118,18 @@ class Game {
 
         this.dropCycleCounter = 0;
         this.dropSpeed = 50
+
+        this.nextPiece = null;
+
+        if (this.ui == null) {
+            this.ui = new UI(200, 600);
+        }
+        else  {
+            this.ui.clearAll();
+        }
+
+
+
 
 
 
@@ -238,7 +251,19 @@ class Game {
 
 
     update() {
-        this.spawnPiece();
+        if (this.currentPiece == null) {
+            if (this.nextPiece == null) {
+
+                this.currentPiece = this.spawnPiece();
+            } else {
+                this.currentPiece = this.nextPiece;
+            }
+            this.onSpawnPiece();
+        }
+
+
+
+
 
 
         this.dropCycleCounter += this.dropSpeed;
@@ -450,20 +475,29 @@ class Game {
         p.color.a = 0.3;
         p.boarderColor.a = 0.3;
         this.shadowPiece = p;
+
+
+        // spawn next piece
+        this.nextPiece = this.spawnPiece();
+        
+        this.onSpawnNextPiece();
     }
 
 
 
+    onSpawnNextPiece() {
+        this.ui.ctx.clearRect(0, 0, this.ui.canvas.width, this.ui.canvas.height);
+    }
+
     spawnPiece(type = null) {
-        if (this.currentPiece != null) return
+        // if (this.currentPiece != null) return
 
         if (type == null) {
             const i = Utils.randomInt(0, Piece.pieceTypes.length - 1);
             type = Piece.pieceTypes[i];
         }
 
-        this.currentPiece = Piece.create(0, 0, type);
-        this.onSpawnPiece();
+        return Piece.create(0, 0, type);
     }
 
     dropCurrentPiece() {
@@ -511,6 +545,8 @@ class Game {
 
 
     draw() {
+
+
         this.grid.draw(this.ctx);
 
 
@@ -522,6 +558,10 @@ class Game {
 
         if (this.isGameOver) {
             Utils.drawTextBG(this.ctx, `Game Over`, "50px Arial", "black", "white", this.grid.w / 12, this.grid.h / 2);
+        }
+
+        if (this.nextPiece) {
+            this.nextPiece.draw(this.ui.ctx, 30)
         }
 
     }
@@ -822,27 +862,33 @@ class UI {
     constructor(w = 200, h = 600) {
         this.init(w, h);
     }
-    
+
     init(w, h) {
         this.initCanvas(w, h);
     }
-    
+
+    clearAll() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
     initCanvas(w, h) {
         this.canvas = document.getElementById('appUI');
         this.canvas.width = w;
         this.canvas.height = h;
         this.ctx = this.canvas.getContext('2d');
     }
-    
-    draw(x_offset = 0, y_offset = 0) {
+
+    draw(x_offset = 0, y_offset = 0, nextPiece = null) {
         this.ctx.fillStyle = 'black'
         this.ctx.fillRect(x_offset, y_offset, this.canvas.width, this.canvas.height)
+        if (nextPiece) {
+            nextPiece.draw(this.ctx, 30)
+        }
     }
 }
 
 
 
 // main
-const ui = new UI(200, 600);
-ui.draw()
+
 Game.s_run()
