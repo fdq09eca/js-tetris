@@ -290,7 +290,7 @@ class Game {
             const prevRow = this.grid.getRow(y - this.stepSize);
 
             if (prevRow.length != row.length) {
-                console.log('Invalid row length')
+                console.assert('Invalid row length')
             }
 
             for (let i = 0; i < row.length; i++) {
@@ -340,9 +340,7 @@ class Game {
 
     isInBounds_Pos(x, y) {
         const b = x >= 0 && x < this.grid.w && y < this.grid.h
-        if (!b) {
-            console.log('Out of bounds')
-        }
+        
         return b;
     }
 
