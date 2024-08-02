@@ -817,6 +817,32 @@ class Piece {
 
 }
 
-// main
 
+class UI {
+    constructor(w = 200, h = 600) {
+        this.init(w, h);
+    }
+    
+    init(w, h) {
+        this.initCanvas(w, h);
+    }
+    
+    initCanvas(w, h) {
+        this.canvas = document.getElementById('appUI');
+        this.canvas.width = w;
+        this.canvas.height = h;
+        this.ctx = this.canvas.getContext('2d');
+    }
+    
+    draw(x_offset = 0, y_offset = 0) {
+        this.ctx.fillStyle = 'black'
+        this.ctx.fillRect(x_offset, y_offset, this.canvas.width, this.canvas.height)
+    }
+}
+
+
+
+// main
+const ui = new UI(200, 600);
+ui.draw()
 Game.s_run()
