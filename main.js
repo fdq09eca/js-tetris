@@ -438,7 +438,10 @@ class Game {
                 }
             } break;
 
-            case 'ControlLeft': {
+            case 'ControlLeft': 
+            case 'ControlRight': 
+
+            {
                 if (this.holdPiece != null) {
                     this.holdPiece.setPos(this.currentPiece.x, this.currentPiece.y);
                     

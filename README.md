@@ -9,6 +9,7 @@ Simple Tetris in JS
 > [!NOTE]  
 > :arrow_down: :arrow_left: :arrow_right: 
 > Hard Drop: <kbd>space</kbd>
+> Hold Piece: <kbd>ctrl</kbd>
 
 > [!TIP]
 > Pause: <kbd>esc</kbd>
