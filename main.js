@@ -120,6 +120,7 @@ class Game {
         this.dropSpeed = 50
 
         this.nextPiece = null;
+        this.holdPiece = null;
 
         if (this.ui == null) {
             this.ui = new UI(200, 600);
@@ -253,7 +254,6 @@ class Game {
     update() {
         if (this.currentPiece == null) {
             if (this.nextPiece == null) {
-
                 this.currentPiece = this.spawnPiece();
             } else {
                 this.currentPiece = this.nextPiece;
@@ -438,6 +438,30 @@ class Game {
                 }
             } break;
 
+            case 'ControlLeft': {
+                if (this.holdPiece != null) {
+                    this.holdPiece.setPos(this.currentPiece.x, this.currentPiece.y);
+                    
+                    // swap hold piece with current piece
+                    const p = this.currentPiece;
+                    this.currentPiece = this.holdPiece;
+                    this.holdPiece = p;
+
+                    // this.ui.clearAll();
+                    
+                } else {
+                    this.holdPiece = this.currentPiece;
+                    this.currentPiece = null;
+                }
+
+                // this.holdPiece.setPos(this.ui.canvas.width/2, this.ui.canvas.height/2);
+                // this.holdPiece.draw(this.ui.ctx, 30);
+
+                
+
+
+            } break;
+
             case 'KeyR': {
                 this.restart();
             } break;
@@ -474,7 +498,6 @@ class Game {
         p.boarderColor.a = 0.3;
         this.shadowPiece = p;
 
-
         // spawn next piece
         this.nextPiece = this.spawnPiece();
         
@@ -484,6 +507,7 @@ class Game {
 
 
     onSpawnNextPiece() {
+
         this.ui.ctx.clearRect(0, 0, this.ui.canvas.width, this.ui.canvas.height);
     }
 
@@ -863,6 +887,14 @@ class UI {
 
     init(w, h) {
         this.initCanvas(w, h);
+    }
+
+    setNextPiece(piece) {
+        this.nextPiece = piece;
+    }
+
+    setHoldPiece(piece) {
+        this.holdPiece = piece;
     }
 
     clearAll() {
