@@ -84,18 +84,18 @@ class Game {
         this.initCanvas();
         this.init()
     }
-    
+
     init() {
         const w = Game.WIDTH;
         const h = Game.HEIGHT;
-        
-        
+
+
         this.initCanvas(w, h);
         this.ctx = this.canvas.getContext('2d');
-        
+
         this.reset();
-        
-        
+
+
         window.removeEventListener('keydown', this.onKeyDown.bind(this), false);
         window.addEventListener('keydown', this.onKeyDown.bind(this), false);
     }
@@ -125,7 +125,7 @@ class Game {
         if (this.ui == null) {
             this.ui = new UI(200, 600);
         }
-        else  {
+        else {
             this.ui.clearAll();
         }
 
@@ -340,7 +340,7 @@ class Game {
 
     isInBounds_Pos(x, y) {
         const b = x >= 0 && x < this.grid.w && y < this.grid.h
-        
+
         return b;
     }
 
@@ -438,32 +438,33 @@ class Game {
                 }
             } break;
 
-            case 'ControlLeft': 
-            case 'ControlRight': 
+            case 'ControlLeft':
+            case 'ControlRight':
 
-            {
-                if (this.holdPiece != null) {
-                    this.holdPiece.setPos(this.currentPiece.x, this.currentPiece.y);
-                    
-                    // swap hold piece with current piece
-                    const p = this.currentPiece;
-                    this.currentPiece = this.holdPiece;
-                    this.holdPiece = p;
+                {
+                    if (this.holdPiece != null) {
+                        this.holdPiece.setPos(this.currentPiece.x, this.currentPiece.y);
 
-                    // this.ui.clearAll();
-                    
-                } else {
-                    this.holdPiece = this.currentPiece;
-                    this.currentPiece = null;
-                }
+                        // swap hold piece with current piece
+                        const oldPiece = this.currentPiece;
+                        this.currentPiece = this.holdPiece;
+                        this.holdPiece = oldPiece;
 
-                // this.holdPiece.setPos(this.ui.canvas.width/2, this.ui.canvas.height/2);
-                // this.holdPiece.draw(this.ui.ctx, 30);
+                        // this.ui.clearAll();
 
-                
+                    } else {
+                        this.holdPiece = this.currentPiece;
+                        this.currentPiece = null;
+
+                    }
+
+                    // this.holdPiece.setPos(this.ui.canvas.width/2, this.ui.canvas.height/2);
+                    // this.holdPiece.draw(this.ui.ctx, 30);
 
 
-            } break;
+
+
+                } break;
 
             case 'KeyR': {
                 this.restart();
@@ -503,7 +504,7 @@ class Game {
 
         // spawn next piece
         this.nextPiece = this.spawnPiece();
-        
+
         this.onSpawnNextPiece();
     }
 
@@ -562,6 +563,8 @@ class Game {
 
 
         p.shape = piece.shape;
+        p.color = piece.color.clone();
+        p.color.a = 0.3;
         p.x = piece.x;
         p.y = piece.y;
         this.drop(p);
@@ -679,22 +682,22 @@ class Grid {
 
 
     get nRow() {
-        return Math.floor(this.h / this.cellSize);
+        return Utils.asInt(this.h / this.cellSize);
     }
 
     get nCol() {
-        return Math.floor(this.w / this.cellSize);
+        return Utils.asInt(this.w / this.cellSize);
     }
 
     getCelllAt(x, y) {
-        const row = Math.floor((y - this.y) / this.cellSize);
-        const col = Math.floor((x - this.x) / this.cellSize);
+        const row = Utils.asInt((y - this.y) / this.cellSize);
+        const col = Utils.asInt((x - this.x) / this.cellSize);
 
         if (row < 0 || row >= this.nRow
             || col < 0 || col >= this.nCol) {
             return null;
         }
-        const i = row * Math.floor(this.w / this.cellSize) + col
+        const i = row * Utils.asInt(this.w / this.cellSize) + col
         return this.cells[i];
     }
 
@@ -705,7 +708,7 @@ class Grid {
 
         for (let i = 0; i < nCells; i++) {
             const row = i % this.nCol;
-            const col = Math.floor(i / this.nCol)
+            const col = Utils.asInt(i / this.nCol)
 
             const x = this.x + row * this.cellSize;
             const y = this.y + col * this.cellSize;
@@ -745,6 +748,8 @@ class Piece {
     clone() {
         const p = new Piece(this.x, this.y, this.color.clone());
         p.shape = this.shape.map(row => row.map(v => v));
+        p.color = this.color.clone();
+        p.type = this.type;
         return p;
     }
 
