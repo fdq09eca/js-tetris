@@ -19,3 +19,5 @@ Simple Tetris in JS
 - [ ] score
 - [ ] combo
 - [ ] hold piece adjust?
+- [ ] tryMove for `n` step?
+- [ ] one canvas!
