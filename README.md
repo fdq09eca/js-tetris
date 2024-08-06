@@ -13,6 +13,9 @@ Simple Tetris in JS
 - Restart: <kbd>r</kbd>
 
 ## todo
+
+- [ ] bgm
+- [ ] sound effect
 - [ ] score
 - [ ] combo
 - [ ] hold piece adjust?
