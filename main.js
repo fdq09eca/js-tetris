@@ -477,8 +477,6 @@ class Game {
 
         // spawn next piece
         this.nextPiece = this.spawnPiece();
-
-        this.onSpawnNextPiece();
     }
     
     spawnPiece(type = null) {
@@ -909,12 +907,7 @@ class UI {
         this.ctx.fillStyle = oldStyle;
     }
 
-    clear(x = null, y = null, w = null, h = null) {
-        x = x || 0
-        y = y || 0
-        w = w || this.canvas.width
-        h = h || this.canvas.height
-
+    clear(x = 0, y = 0, w = this.canvas.width, h = this.canvas.height) {
         this.ctx.clearRect(x, y, w, h);
     }
 }
