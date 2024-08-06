@@ -16,6 +16,15 @@ class MyColor {
 }
 
 class Utils {
+    static getCanvas(w, h, id) {
+        const canvas = document.getElementById(id);
+        if (canvas == null) {
+            throw new Error('Canvas not found');
+        }
+        canvas.width = w;
+        canvas.height = h;
+        return canvas;
+    }
 
     static drawTextBG(ctx, txt, font = "50px Arial", textColor = "red, ", bgColor = "white", x = 0, y = 0) {
         ctx.font = font;
@@ -117,40 +126,17 @@ class Game {
         this.shadowPiece = null;
 
         this.dropCycleCounter = 0;
-        this.dropSpeed = 50
+        this.dropSpeed = Game.DROP_CYCLE * 5 / 100
 
         this.nextPiece = null;
         this.holdPiece = null;
 
-        if (this.ui == null) {
-            this.ui = new UI(200, 600);
+        if (this.nextPieceUi == null) {
+            this.nextPieceUi = new UI(200, 600, "appUI", this.grid.cellSize);
         }
         else {
-            this.ui.clearAll();
+            this.nextPieceUi.clear();
         }
-
-
-
-
-
-
-        // { // test
-        //     let x = 0;
-
-        //     while (x < this.grid.w) {
-        //         x += this.grid.cellSize;
-
-        //         for (let i = 0; i < 4; i++) {
-        //             const y = this.grid.h - this.grid.cellSize * (i + 1); // last row
-        //             const c = this.grid.getCelllAt(x, y)
-        //             if (c) {
-        //                 c.value = 1
-        //                 c.color = 'red'
-        //             }
-        //         }
-        //     }
-        // }
-
     }
 
     initCanvas(w, h) {
@@ -219,6 +205,7 @@ class Game {
             return
         }
 
+        // set piece to grid
         for (let r = 0; r < this.currentPiece.shape.length; r++) {
             for (let c = 0; c < this.currentPiece.shape[r].length; c++) {
                 const v = this.currentPiece.shape[r][c]
@@ -260,11 +247,6 @@ class Game {
             }
             this.onSpawnPiece();
         }
-
-
-
-
-
 
         this.dropCycleCounter += this.dropSpeed;
         if (this.dropCycleCounter >= Game.DROP_CYCLE) {
@@ -327,7 +309,7 @@ class Game {
                 if (v > 0) {
                     const x = piece.x + c * this.stepSize;
                     const y = piece.y + r * this.stepSize;
-                    const b = this.isInBounds_Pos(x, y);
+                    const b = this.isInBoundsByXY(x, y);
                     if (!b) {
                         return b
                     }
@@ -338,7 +320,7 @@ class Game {
     }
 
 
-    isInBounds_Pos(x, y) {
+    isInBoundsByXY(x, y) {
         const b = x >= 0 && x < this.grid.w && y < this.grid.h
 
         return b;
@@ -367,7 +349,6 @@ class Game {
                 }
             } break;
 
-
             case 'ArrowRight': {
                 if (this.currentPiece == null) return
                 if (this.tryMove(this.currentPiece, this.stepSize, 0)) {
@@ -380,7 +361,6 @@ class Game {
                 if (this.currentPiece == null) return
                 if (this.tryMove(this.currentPiece, 0, this.stepSize)) {
                     this.updateShadowPiece();
-
                 }
             } break;
 
@@ -392,7 +372,6 @@ class Game {
                 this.currentPiece.rotate();
 
                 if (this.isInBounds(this.currentPiece)) {
-
                     if (this.isCollided(this.currentPiece)
                         && this.isFailedAllDirections(this.currentPiece)) {
                         // undo
@@ -401,11 +380,10 @@ class Game {
                     }
 
                     this.updateShadowPiece();
-
-                } else {
+                }
+                else {
                     // not in bounds
-                    if (this.isFailedAllDirections(this.currentPiece) // try up
-                    ) {
+                    if (this.isFailedAllDirections(this.currentPiece)) {
                         // undo
                         this.currentPiece.shape = oldShape;
                         break;
@@ -416,11 +394,8 @@ class Game {
                             this.currentPiece.shape = oldShape;
                             break;
                         }
-
-
                         this.updateShadowPiece();
                     }
-
                 }
 
             } break;
@@ -442,8 +417,15 @@ class Game {
             case 'ControlRight':
 
                 {
-                    if (this.holdPiece != null) {
+                    if (this.holdPiece != null && this.currentPiece != null) {
                         this.holdPiece.setPos(this.currentPiece.x, this.currentPiece.y);
+
+                        if (!this.isInBounds(this.holdPiece) && this.isFailedAllDirections(this.holdPiece)) {
+                            // TODO: allow adjust hold piece position? adjust right or left until in bounds?
+
+                            return;
+                        }
+
 
                         // swap hold piece with current piece
                         const oldPiece = this.currentPiece;
@@ -457,13 +439,6 @@ class Game {
                         this.currentPiece = null;
 
                     }
-
-                    // this.holdPiece.setPos(this.ui.canvas.width/2, this.ui.canvas.height/2);
-                    // this.holdPiece.draw(this.ui.ctx, 30);
-
-
-
-
                 } break;
 
             case 'KeyR': {
@@ -473,8 +448,7 @@ class Game {
             default:
                 console.log(ev)
                 break;
-        }
-    }
+        }    }
 
     isFailedAllDirections(piece) {
         return !this.tryMove(piece, -this.stepSize, 0) // try left
@@ -507,14 +481,7 @@ class Game {
 
         this.onSpawnNextPiece();
     }
-
-
-
-    onSpawnNextPiece() {
-
-        this.ui.ctx.clearRect(0, 0, this.ui.canvas.width, this.ui.canvas.height);
-    }
-
+    
     spawnPiece(type = null) {
         // if (this.currentPiece != null) return
 
@@ -523,7 +490,7 @@ class Game {
             type = Piece.pieceTypes[i];
         }
 
-        return Piece.create(0, 0, type);
+        return Piece.create(0, 0, this.grid.cellSize, type);
     }
 
     dropCurrentPiece() {
@@ -549,7 +516,7 @@ class Game {
         if (p == null) return
 
         this.updateShadowPiece(piece);
-        p.draw(ctx, this.grid.cellSize);
+        p.draw(ctx);
     }
 
     updateShadowPiece(piece = null) {
@@ -573,23 +540,33 @@ class Game {
 
 
     draw() {
-
-
         this.grid.draw(this.ctx);
 
 
         this.drawShadowPiece(this.ctx, this.currentPiece);
         if (this.currentPiece != null)
-            this.currentPiece.draw(this.ctx, this.grid.cellSize);
-
-
+            this.currentPiece.draw(this.ctx);
 
         if (this.isGameOver) {
             Utils.drawTextBG(this.ctx, `Game Over`, "50px Arial", "black", "white", this.grid.w / 12, this.grid.h / 2);
         }
 
         if (this.nextPiece) {
-            this.nextPiece.draw(this.ui.ctx, 30)
+            const w = this.nextPiece.cellSize * 4
+            const h = this.nextPiece.cellSize * 4
+            this.nextPieceUi.clear(0, 0, w, h);
+            this.nextPiece.draw(this.nextPieceUi.ctx)
+        }
+
+        if (this.holdPiece) {
+            const w = this.holdPiece.cellSize * 4
+            const h = this.holdPiece.cellSize * 4
+
+            const yOffset =  this.nextPieceUi.height() - h;
+            
+            
+            this.nextPieceUi.clear(0, yOffset, w, h);
+            this.holdPiece.draw(this.nextPieceUi.ctx, -this.holdPiece.x, -this.holdPiece.y + yOffset)
         }
 
     }
@@ -690,6 +667,8 @@ class Grid {
     }
 
     getCelllAt(x, y) {
+
+
         const row = Utils.asInt((y - this.y) / this.cellSize);
         const col = Utils.asInt((x - this.x) / this.cellSize);
 
@@ -697,7 +676,9 @@ class Grid {
             || col < 0 || col >= this.nCol) {
             return null;
         }
+
         const i = row * Utils.asInt(this.w / this.cellSize) + col
+
         return this.cells[i];
     }
 
@@ -735,18 +716,19 @@ class Piece {
         this.y = y;
     }
 
-    constructor(x, y, color = 'cyan') {
+    constructor(x, y, cellSize = 1) {
         this.x = x;
         this.y = y;
+        this.cellSize = cellSize
         this.type = null;
         this.shape = null;
-        this.color = color;
+        this.color = 'cyan';
         this.boarderColor = new MyColor(0, 0, 0, 1);
         this.borderWidth = 2
     }
 
     clone() {
-        const p = new Piece(this.x, this.y, this.color.clone());
+        const p = new Piece(this.x, this.y, this.cellSize);
         p.shape = this.shape.map(row => row.map(v => v));
         p.color = this.color.clone();
         p.type = this.type;
@@ -762,22 +744,41 @@ class Piece {
         return this.shape[0].length;
     }
 
-    draw(ctx, cellSize) {
+    draw(ctx, offsetX = 0, offsetY = 0) {
         this.shape.forEach((row, i) => {
             row.forEach((value, j) => {
                 if (value === 1) {
-                    const x = j * cellSize + this.x;
-                    const y = i * cellSize + this.y;
+                    const x = j * this.cellSize + this.x + offsetX;
+                    const y = i * this.cellSize + this.y + offsetY;
                     Cell.s_draw(ctx,
                         x,
                         y,
-                        cellSize,
+                        this.cellSize,
                         this.color.toString(),
                         this.borderWidth,
                         this.boarderColor.toString());
                 }
             })
         })
+    }
+
+    width(isIncludeEmpty = true) {
+        if (isIncludeEmpty) {
+            return this.nCol() * this.cellSize;
+        } else {
+            const ws = this.shape.map(row => row.filter(v => v > 0).length)
+            const w = Math.max(...ws)
+            return w * this.cellSize;
+        }
+    }
+
+    height(isIncludeEmpty = true) {
+        if (isIncludeEmpty) {
+            return this.nRow() * this.cellSize;
+        } else {
+            const h = Utils.sum(this.shape.map(row => row.some(v => v > 0)))
+            return h * this.cellSize;
+        }
     }
 
     move(dx, dy) {
@@ -805,8 +806,10 @@ class Piece {
         this.shape = rotated;
     }
 
-    static create(x = 0, y = 0, pieceType = 'I') {
+    static create(x = 0, y = 0, cellSize, pieceType = 'I') {
+
         const p = new Piece(x, y, 'cyan');
+        p.cellSize = cellSize;
 
         switch (pieceType) {
             case 'I': {
@@ -881,51 +884,41 @@ class Piece {
 
         p.type = pieceType;
         return p;
-
-
     }
-
 }
 
 
 class UI {
-    constructor(w = 200, h = 600) {
-        this.init(w, h);
-    }
-
-    init(w, h) {
-        this.initCanvas(w, h);
-    }
-
-    setNextPiece(piece) {
-        this.nextPiece = piece;
-    }
-
-    setHoldPiece(piece) {
-        this.holdPiece = piece;
-    }
-
-    clearAll() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-
-    initCanvas(w, h) {
-        this.canvas = document.getElementById('appUI');
-        this.canvas.width = w;
-        this.canvas.height = h;
+    constructor(w = 200, h = 600, id = 'ui', cellSize = 30,) {
+        this.canvas = Utils.getCanvas(w, h, id);
         this.ctx = this.canvas.getContext('2d');
+        this.cellSize = cellSize;
     }
 
-    draw(x_offset = 0, y_offset = 0, nextPiece = null) {
-        this.ctx.fillStyle = 'black'
-        this.ctx.fillRect(x_offset, y_offset, this.canvas.width, this.canvas.height)
-        if (nextPiece) {
-            nextPiece.draw(this.ctx, 30)
-        }
+    height() {
+        return this.canvas.height;
+    }
+
+    width() {
+        return this.canvas.width;
+    }
+
+    _debugRect(x, y, w, h, color = 'black') {
+        const oldStyle = this.ctx.fillStyle
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(x, y, w, h);
+        this.ctx.fillStyle = oldStyle;
+    }
+
+    clear(x = null, y = null, w = null, h = null) {
+        x = x || 0
+        y = y || 0
+        w = w || this.canvas.width
+        h = h || this.canvas.height
+
+        this.ctx.clearRect(x, y, w, h);
     }
 }
-
-
 
 // main
 

@@ -15,15 +15,7 @@ Simple Tetris in JS
 > Pause: <kbd>esc</kbd>
 > Restart: <kbd>r</kbd>
 
-## known bugs
-
-- [x] move when next to a piece, current piece goes up.
-- [x] rotate collide problem.
-
 ## todo
-
-- [ ] smooth time?
-- [ ] drop speed?
-- [ ] next piece display
 - [ ] score
 - [ ] combo
+- [ ] hold piece adjust?
