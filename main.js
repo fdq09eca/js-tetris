@@ -76,17 +76,13 @@ class Game {
     }
 
     static get FPS() {
-        return 60;
+        return 80;
     }
 
     static get DROP_CYCLE() {
         return 1000;
     }
-
-    static get FPS() {
-        return 80;
-    }
-
+    
     constructor() {
         this.initCanvas();
         this.init()
