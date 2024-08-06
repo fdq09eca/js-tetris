@@ -82,7 +82,7 @@ class Game {
     static get DROP_CYCLE() {
         return 1000;
     }
-    
+
     constructor() {
         this.initCanvas();
         this.init()
@@ -126,11 +126,11 @@ class Game {
         this.nextPiece = null;
         this.holdPiece = null;
 
-        if (this.nextPieceUi == null) {
-            this.nextPieceUi = new UI(200, 600, "appUI", this.grid.cellSize);
+        if (this.ui == null) {
+            this.ui = new UI(200, 600, "appUI", this.grid.cellSize);
         }
         else {
-            this.nextPieceUi.clear();
+            this.ui.clear();
         }
     }
 
@@ -414,17 +414,17 @@ class Game {
 
                 {
                     if (this.isHeldPressed) return
-                    
+
                     if (this.holdPiece != null && this.currentPiece != null) {
                         const pos = this.spawnPosition(this.holdPiece)
                         this.holdPiece.setPos(pos.x, pos.y);
-                        
+
                         if (!this.isInBounds(this.holdPiece) && this.isFailedAllDirections(this.holdPiece)) {
                             // TODO: allow adjust hold piece position? adjust right or left until in bounds?
                             return;
                         }
-                        
-                        
+
+
                         // swap hold piece with current piece
                         const oldPiece = this.currentPiece;
                         this.currentPiece = this.holdPiece;
@@ -435,7 +435,7 @@ class Game {
                     } else {
                         this.holdPiece = this.currentPiece;
                         this.currentPiece = null;
-                        
+
                     }
                     this.isHeldPressed = true;
                 } break;
@@ -447,7 +447,8 @@ class Game {
             default:
                 console.log(ev)
                 break;
-        }    }
+        }
+    }
 
     isFailedAllDirections(piece) {
         return !this.tryMove(piece, -this.stepSize, 0) // try left
@@ -478,7 +479,7 @@ class Game {
         // spawn next piece
         this.nextPiece = this.spawnPiece();
     }
-    
+
     spawnPiece(type = null) {
         // if (this.currentPiece != null) return
 
@@ -548,22 +549,27 @@ class Game {
             Utils.drawTextBG(this.ctx, `Game Over`, "50px Arial", "black", "white", this.grid.w / 12, this.grid.h / 2);
         }
 
+
+
+        Utils.drawTextBG(this.ui.ctx, `Next`, "20px Arial", "black", "white", 30, 0);
+
         if (this.nextPiece) {
             const w = this.nextPiece.cellSize * 4
             const h = this.nextPiece.cellSize * 4
-            this.nextPieceUi.clear(0, 0, w, h);
-            this.nextPiece.draw(this.nextPieceUi.ctx)
+            const yOffset = this.nextPiece.cellSize;
+            this.ui.clear(0, yOffset, w, h);
+            this.nextPiece.draw(this.ui.ctx, 0, yOffset)
         }
 
+
+        Utils.drawTextBG(this.ui.ctx, `Hold`, "20px Arial", "black", "white", 30, this.ui.height() - this.grid.cellSize * 5);
         if (this.holdPiece) {
             const w = this.holdPiece.cellSize * 4
             const h = this.holdPiece.cellSize * 4
 
-            const yOffset =  this.nextPieceUi.height() - h;
-            
-            
-            this.nextPieceUi.clear(0, yOffset, w, h);
-            this.holdPiece.draw(this.nextPieceUi.ctx, -this.holdPiece.x, -this.holdPiece.y + yOffset)
+            const yOffset = this.ui.height() - h;
+            this.ui.clear(0, yOffset, w, h);
+            this.holdPiece.draw(this.ui.ctx, -this.holdPiece.x, -this.holdPiece.y + yOffset)
         }
 
     }
