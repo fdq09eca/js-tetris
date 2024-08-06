@@ -87,8 +87,6 @@ class Game {
         return 80;
     }
 
-
-
     constructor() {
         this.initCanvas();
         this.init()
@@ -120,6 +118,7 @@ class Game {
 
         this.isGameOver = false;
         this.isPaused = false;
+        this.isHeldPressed = false;
 
         this.grid = new Grid(0, 0, w, h, 30);
         this.currentPiece = null;
@@ -230,6 +229,7 @@ class Game {
 
         this.currentPiece = null;
         this.shadowPiece = null;
+        this.isHeldPressed = false;
     }
 
     isFullRow(y) {
@@ -417,16 +417,18 @@ class Game {
             case 'ControlRight':
 
                 {
+                    if (this.isHeldPressed) return
+                    
                     if (this.holdPiece != null && this.currentPiece != null) {
-                        this.holdPiece.setPos(this.currentPiece.x, this.currentPiece.y);
-
+                        const pos = this.spawnPosition(this.holdPiece)
+                        this.holdPiece.setPos(pos.x, pos.y);
+                        
                         if (!this.isInBounds(this.holdPiece) && this.isFailedAllDirections(this.holdPiece)) {
                             // TODO: allow adjust hold piece position? adjust right or left until in bounds?
-
                             return;
                         }
-
-
+                        
+                        
                         // swap hold piece with current piece
                         const oldPiece = this.currentPiece;
                         this.currentPiece = this.holdPiece;
@@ -437,8 +439,9 @@ class Game {
                     } else {
                         this.holdPiece = this.currentPiece;
                         this.currentPiece = null;
-
+                        
                     }
+                    this.isHeldPressed = true;
                 } break;
 
             case 'KeyR': {
