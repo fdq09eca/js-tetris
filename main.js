@@ -828,18 +828,18 @@ class Piece {
             case 'J': {
                 p.type = 'J';
                 p.shape = [
-                    [0, 1, 0],
-                    [0, 1, 0],
-                    [1, 1, 0],
+                    [0, 0, 0],
+                    [1, 0, 0],
+                    [1, 1, 1],
                 ];
                 p.color = new MyColor(0, 0, 255, 1);
             } break;
 
             case 'L': {
                 p.shape = [
-                    [0, 1, 0],
-                    [0, 1, 0],
-                    [0, 1, 1],
+                    [0, 0, 0],
+                    [0, 0, 1],
+                    [1, 1, 1],
                 ];
                 p.color = new MyColor(255, 165, 0, 1);
             } break;
@@ -856,9 +856,9 @@ class Piece {
 
             case 'T': {
                 p.shape = [
-                    [0, 0, 0],
-                    [1, 1, 1],
                     [0, 1, 0],
+                    [1, 1, 1],
+                    [0, 0, 0],
                 ];
                 p.color = new MyColor(128, 0, 128, 1);
             } break;
