@@ -334,7 +334,9 @@ class Game {
     }
 
     onKeyDown(ev) {
-
+        if ((this.isPaused || this.isGameOver) && ev.code != 'Escape')
+            return
+        
         switch (ev.code) {
 
             case 'ArrowLeft': {
