@@ -7,6 +7,7 @@ Simple Tetris in JS
 ### Control
 
 - :arrow_down: :arrow_left: :arrow_right:
+- Rotate: :arrow_up:
 - Hard Drop: <kbd>space</kbd> 
 - Hold Piece: <kbd>ctrl</kbd>
 - Pause: <kbd>esc</kbd>
